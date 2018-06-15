@@ -1,0 +1,17 @@
+graph graphname {
+
+	a -- b
+	a -- f
+	a -- e
+
+	b -- f
+	b -- e
+	b -- d
+	b -- c
+
+	c -- d
+
+	d -- e
+
+	e -- f
+}

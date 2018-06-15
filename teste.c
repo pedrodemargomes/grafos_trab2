@@ -8,6 +8,8 @@ int main(void) {
 
  	if ( !g )
  		return 1;
+	
+	colore( g ,busca_lexicografica(g, 0) );
 
 	escreve_grafo(stdout, g);
 	return !destroi_grafo(g);

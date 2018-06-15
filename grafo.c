@@ -3,14 +3,41 @@
 #include <graphviz/cgraph.h> 
 #include "grafo.h"
 
-// ----------------------------------------------------------------------------
-// Implementa fila
+//------------------------------------------------------------------------------
+// (apontador para) estrutura de dados para representar um grafo
+// 
+// o grafo pode ser direcionado ou não
+// 
+// o grafo tem um nome, que é uma "string"
+
+struct grafo {
+	Agraph_t *grafo;
+	int numNodes;
+};
+
+typedef struct mynode_s {
+	Agrec_t header;
+	int rotuloMax;
+	int cor;
+} mynode_t;
+
 
 struct node {
 	Agnode_t *elem;
 	struct node *prox;
 	struct node *ant;
 };
+
+struct vertice {
+	Agnode_t *vertice;
+};
+
+
+#define ROTULO_MAX(NODE) (((mynode_t *)(AGDATA(NODE)))->rotuloMax)
+#define COR(NODE) (((mynode_t *)(AGDATA(NODE)))->cor)
+
+// ----------------------------------------------------------------------------
+// Implementa fila
 
 struct node *head;
 int tamF = 0;
@@ -28,21 +55,35 @@ void insereF(Agnode_t *elem) {
 		head = novo;
 	} else {
 		struct node *p = head;
-		while(novo->elem < p->elem->rotuloMax)
+		while( p->prox != NULL && ROTULO_MAX(novo->elem) < ROTULO_MAX(p->elem))
 			p = p->prox;
 
-		novo->ant = p->ant;
-		novo->prox = p;	
-		if(p != head)
-			p->ant->prox = novo;
-		p->ant = novo;
+		if(p->prox == NULL) {
+			if( ROTULO_MAX(novo->elem) < ROTULO_MAX(p->elem) ) {
+				p->prox = novo;
+				novo->ant = p;
+				novo ->prox = NULL;
+			} else {
+				novo->ant = p->ant;
+				novo->prox = p;	
+				if(p != head)
+					p->ant->prox = novo;
+				p->ant = novo;
+			}
+		} else {
+			novo->ant = p->ant;
+			novo->prox = p;	
+			if(p != head)
+				p->ant->prox = novo;
+			p->ant = novo;
+		}
 	}
 	tamF++;
 }
 
 void impF(struct node *p) {
 	if(p != NULL) {
-		printf("%d ",p->elem->rotuloMax);
+		printf("%d ",ROTULO_MAX(p->elem));
 		impF(p->prox);
 	}
 
@@ -62,7 +103,7 @@ Agnode_t *removeF() {
 		return NULL;
 	} else if(head->prox != NULL) {		// Lista com mais de um elemento
 		struct node *p = head;
-		head = head->prox
+		head = head->prox;
 		head->ant = NULL;
 		tamF--;
 		return p->elem;
@@ -76,24 +117,6 @@ Agnode_t *removeF() {
 }
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-typedef struct mynode_s {
-	Agrec_t header;
-	int rotuloMax;
-} mynode_t;
-
-//------------------------------------------------------------------------------
-// (apontador para) estrutura de dados para representar um grafo
-// 
-// o grafo pode ser direcionado ou não
-// 
-// o grafo tem um nome, que é uma "string"
-
-struct grafo {
-	Agraph_t *grafo;
-	int numNodes;
-};
 
 //------------------------------------------------------------------------------
 // desaloca toda a memória usada em *g
@@ -138,6 +161,14 @@ grafo le_grafo(FILE *input) {
 //         NULL, em caso de erro 
 
 grafo escreve_grafo(FILE *output, grafo g) {
+	Agnode_t *n;
+	agattr(g->grafo,AGNODE,"style","filled");
+	char str[8];
+	for (n = agfstnode(g->grafo); n; n = agnxtnode(g->grafo,n)) {
+		sprintf(str,"#%06x", (unsigned int)(16777215.0/(COR(n)+1)) );
+		agset(n,"color",str);
+	}
+
 	agwrite(g->grafo,output);
 	return g;
 }
@@ -145,7 +176,7 @@ grafo escreve_grafo(FILE *output, grafo g) {
 // devolve um número entre 0 e o número de vertices de g
 
 unsigned int cor(vertice v, grafo g) {
-	return ;
+	return COR(v->vertice);
 }
 
 //------------------------------------------------------------------------------
@@ -153,33 +184,35 @@ unsigned int cor(vertice v, grafo g) {
 // uma busca em largura lexicográfica a partir de r
 
 vertice *busca_lexicografica(grafo g, vertice r) {
+	struct vertice *ret = malloc(g->numNodes*sizeof(struct vertice));
+
 	Agedge_t *e;
 	Agnode_t *n;
 	for (n = agfstnode(g->grafo); n; n = agnxtnode(g->grafo,n)) {	
-		((mynode_t *)(AGDATA(n)))->rotuloMax = 0;
+		ROTULO_MAX(n) = 0;
+		COR(n) = -1;
 	}
 	
-	Agnode_t *verticeInicial = r;
-	verticeInicial->rotuloMax = g->numVertices;
+	Agnode_t *verticeInicial = agnode(g->grafo,"a",FALSE);//r->vertice;
+	ROTULO_MAX(verticeInicial) = g->numNodes;
 
+	criaF();
 	for (n = agfstnode(g->grafo); n; n = agnxtnode(g->grafo,n)) {	
 		insereF(n);
 	}
-	
-	int i = 0;
 
-	criaF();
-	while(!ehVazio()) {
+	int i = 0;
+	while(ehVazia() == 0) {
 		n = removeF();
+		ret[i].vertice = n;
 		for (e = agfstout(g->grafo,n); e; e = agnxtout(g->grafo,e)) {
-			if( ((mynode_t *)(AGDATA(aghead(e))))->rotuloMax < tamF )
-				((mynode_t *)(AGDATA(aghead(e))))->rotuloMax = tamF;
+			if( ROTULO_MAX(aghead(e)) < tamF )
+				ROTULO_MAX(aghead(e)) = tamF;
 		}
-	
+		i++;
 	}
-	
-	
-	return ;
+
+	return (struct vertice **)ret;
 }
 
 //------------------------------------------------------------------------------
@@ -191,10 +224,28 @@ vertice *busca_lexicografica(grafo g, vertice r) {
 //     2. cor(u,g) != cor(v,g), para toda aresta {u,v} de g
 
 unsigned int colore(grafo g, vertice *v) {
+	struct vertice *vPtr = (struct vertice *)v;
+	Agedge_t *e;
+	int i,j;
+	int *disp = malloc(g->numNodes*sizeof(int));
+	for(i = g->numNodes-1; i >=0;i--) {
+		if( COR(vPtr[i].vertice) != -1 ) // Se o vertice tiver alguma cor
+			continue;
+		for(j=0;j<g->numNodes;j++)
+			disp[j] = 1;
+		for (e = agfstout(g->grafo,vPtr[i].vertice); e; e = agnxtout(g->grafo,e)) {
+			if( COR(aghead(e)) != -1 )	
+				disp[COR(aghead(e))] = 0;
+		}
+		for(j=0;j<g->numNodes;j++) {
+			if(disp[j] == 1)
+				break;
+		}
+		COR(vPtr[i].vertice) = j;
+	}
 
-
-
-	return ;
+	free(disp);
+	return 0;
 }
 
 //------------------------------------------------------------------------------

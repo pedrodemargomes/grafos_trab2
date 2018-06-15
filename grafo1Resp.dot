@@ -1,0 +1,13 @@
+graph graphname {
+	node [style=filled];
+	a -- b;
+	a -- f;
+	a -- e;
+	b -- f;
+	b -- e;
+	b -- d;
+	b -- c;
+	e -- f;
+	d -- e;
+	c -- d;
+}
