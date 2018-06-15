@@ -13,6 +13,7 @@ struct node {
 };
 
 struct node *head;
+int tamF = 0;
 
 void criaF() {
 	head = NULL;
@@ -35,8 +36,8 @@ void insereF(Agnode_t *elem) {
 		if(p != head)
 			p->ant->prox = novo;
 		p->ant = novo;
-
 	}
+	tamF++;
 }
 
 void impF(struct node *p) {
@@ -56,18 +57,20 @@ int ehVazia() {
 	return 0;
 }
 
-void removeF() {
+Agnode_t *removeF() {
 	if(head == NULL) {
 		return NULL;
 	} else if(head->prox != NULL) {		// Lista com mais de um elemento
 		struct node *p = head;
 		head = head->prox
 		head->ant = NULL;
-		return p;
+		tamF--;
+		return p->elem;
 	} else {
 		struct node *ret = head;
 		head = NULL;
-		return ret;
+		tamF--;
+		return ret->elem;
 	}
 	
 }
@@ -150,6 +153,7 @@ unsigned int cor(vertice v, grafo g) {
 // uma busca em largura lexicográfica a partir de r
 
 vertice *busca_lexicografica(grafo g, vertice r) {
+	Agedge_t *e;
 	Agnode_t *n;
 	for (n = agfstnode(g->grafo); n; n = agnxtnode(g->grafo,n)) {	
 		((mynode_t *)(AGDATA(n)))->rotuloMax = 0;
@@ -161,9 +165,17 @@ vertice *busca_lexicografica(grafo g, vertice r) {
 	for (n = agfstnode(g->grafo); n; n = agnxtnode(g->grafo,n)) {	
 		insereF(n);
 	}
+	
+	int i = 0;
 
+	criaF();
 	while(!ehVazio()) {
-		
+		n = removeF();
+		for (e = agfstout(g->grafo,n); e; e = agnxtout(g->grafo,e)) {
+			if( ((mynode_t *)(AGDATA(aghead(e))))->rotuloMax < tamF )
+				((mynode_t *)(AGDATA(aghead(e))))->rotuloMax = tamF;
+		}
+	
 	}
 	
 	
