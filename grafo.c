@@ -17,7 +17,7 @@ struct grafo {
 
 typedef struct mynode_s {
 	Agrec_t header;
-	int rotuloMax;
+	int *rotulos;
 	int cor;
 } mynode_t;
 
@@ -33,8 +33,26 @@ struct vertice {
 };
 
 
-#define ROTULO_MAX(NODE) (((mynode_t *)(AGDATA(NODE)))->rotuloMax)
+#define ROTULOS(NODE) (((mynode_t *)(AGDATA(NODE)))->rotulos)
 #define COR(NODE) (((mynode_t *)(AGDATA(NODE)))->cor)
+
+// ----------------------------------------------------------------------------
+// Insere rotulo
+
+void insereRotulo(int *rotulos,int n) {
+	rotulos[n] = 1;
+}
+
+int comparaRotulos(grafo g,int *rA, int *rB) {
+	int i;
+	for(i = g->numNodes - 1;  i >= 0 ; i--) {
+		if(rA[i] == 0 && rB[i] == 1)
+			return 1;
+		else if(rA[i] == 1 && rB[i] == 0)
+			return 0;
+	}
+	return 0;
+}
 
 // ----------------------------------------------------------------------------
 // Implementa fila
@@ -46,7 +64,8 @@ void criaF() {
 	head = NULL;
 }
 
-void insereF(Agnode_t *elem) {	 
+
+void insereF(grafo g,Agnode_t *elem) {	 
 	struct node *novo = malloc(sizeof(struct node));
 	novo->elem = elem;
 	
@@ -55,11 +74,11 @@ void insereF(Agnode_t *elem) {
 		head = novo;
 	} else {
 		struct node *p = head;
-		while( p->prox != NULL && ROTULO_MAX(novo->elem) < ROTULO_MAX(p->elem))
+		while( p->prox != NULL && comparaRotulos(g, ROTULOS(novo->elem), ROTULOS(p->elem)) )
 			p = p->prox;
 
 		if(p->prox == NULL) {
-			if( ROTULO_MAX(novo->elem) < ROTULO_MAX(p->elem) ) {
+			if( comparaRotulos(g, ROTULOS(novo->elem), ROTULOS(p->elem)) ) {
 				p->prox = novo;
 				novo->ant = p;
 				novo ->prox = NULL;
@@ -81,17 +100,17 @@ void insereF(Agnode_t *elem) {
 	tamF++;
 }
 
-void impF(struct node *p) {
-	if(p != NULL) {
-		printf("%d ",ROTULO_MAX(p->elem));
-		impF(p->prox);
-	}
+// void impF(struct node *p) {
+// 	if(p != NULL) {
+// 		printf("%d ",ROTULO_MAX(p->elem));
+// 		impF(p->prox);
+// 	}
 
-}
+// }
 
-void imprimeF() {
-	impF(head);
-}
+// void imprimeF() {
+// 	impF(head);
+// }
 
 int ehVazia() {
 	if(head == NULL) return 1;
@@ -163,6 +182,7 @@ grafo le_grafo(FILE *input) {
 grafo escreve_grafo(FILE *output, grafo g) {
 	Agnode_t *n;
 	agattr(g->grafo,AGNODE,"style","filled");
+	agattr(g->grafo,AGNODE,"color","white");
 	char str[8];
 	for (n = agfstnode(g->grafo); n; n = agnxtnode(g->grafo,n)) {
 		sprintf(str,"#%06x", (unsigned int)(16777215.0/(COR(n)+1)) );
@@ -184,30 +204,33 @@ unsigned int cor(vertice v, grafo g) {
 // uma busca em largura lexicográfica a partir de r
 
 vertice *busca_lexicografica(grafo g, vertice r) {
-	struct vertice *ret = malloc(g->numNodes*sizeof(struct vertice));
-
 	Agedge_t *e;
 	Agnode_t *n;
+	int i;
 	for (n = agfstnode(g->grafo); n; n = agnxtnode(g->grafo,n)) {	
-		ROTULO_MAX(n) = 0;
+		ROTULOS(n) = calloc((g->numNodes+1),sizeof(int)); // Inicia com zero	
+	}
+
+	struct vertice *ret = malloc(g->numNodes*sizeof(struct vertice));
+
+	for (n = agfstnode(g->grafo); n; n = agnxtnode(g->grafo,n)) {	
 		COR(n) = -1;
 	}
 	
 	Agnode_t *verticeInicial = agnode(g->grafo,"a",FALSE);//r->vertice;
-	ROTULO_MAX(verticeInicial) = g->numNodes;
+	insereRotulo(ROTULOS(verticeInicial),g->numNodes);
 
 	criaF();
 	for (n = agfstnode(g->grafo); n; n = agnxtnode(g->grafo,n)) {	
-		insereF(n);
+		insereF(g, n);
 	}
 
-	int i = 0;
+	i = 0;
 	while(ehVazia() == 0) {
 		n = removeF();
 		ret[i].vertice = n;
 		for (e = agfstout(g->grafo,n); e; e = agnxtout(g->grafo,e)) {
-			if( ROTULO_MAX(aghead(e)) < tamF )
-				ROTULO_MAX(aghead(e)) = tamF;
+			insereRotulo(ROTULOS(aghead(e)), tamF);
 		}
 		i++;
 	}
@@ -242,6 +265,7 @@ unsigned int colore(grafo g, vertice *v) {
 				break;
 		}
 		COR(vPtr[i].vertice) = j;
+		printf("cor = %d\n",j);
 	}
 
 	free(disp);
