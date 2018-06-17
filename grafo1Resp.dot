@@ -1,0 +1,22 @@
+graph graphname {
+	node [color=white,
+		 style=filled
+	];
+	a	 [color="#7fffff"];
+	b	 [color="#555555"];
+	a -- b;
+	f	 [color="#ffffff"];
+	a -- f;
+	e	 [color="#3fffff"];
+	a -- e;
+	b -- f;
+	b -- e;
+	d	 [color="#7fffff"];
+	b -- d;
+	c	 [color="#ffffff"];
+	b -- c;
+	e -- f;
+	d -- e;
+	c -- d;
+}
+

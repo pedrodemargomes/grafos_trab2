@@ -18,6 +18,7 @@ struct grafo {
 typedef struct mynode_s {
 	Agrec_t header;
 	int *rotulos;
+	int tamRotulos;
 	int cor;
 } mynode_t;
 
@@ -35,20 +36,22 @@ struct vertice {
 
 #define ROTULOS(NODE) (((mynode_t *)(AGDATA(NODE)))->rotulos)
 #define COR(NODE) (((mynode_t *)(AGDATA(NODE)))->cor)
+#define TAM_ROTULOS(NODE) (((mynode_t *)(AGDATA(NODE)))->tamRotulos)
 
 // ----------------------------------------------------------------------------
 // Insere rotulo
 
-void insereRotulo(int *rotulos,int n) {
-	rotulos[n] = 1;
+void insereRotulo(Agnode_t *node,int n) {
+	ROTULOS(node)[TAM_ROTULOS(node)] = n;
+	TAM_ROTULOS(node)++;
 }
 
 int comparaRotulos(grafo g,int *rA, int *rB) {
 	int i;
-	for(i = g->numNodes - 1;  i >= 0 ; i--) {
-		if(rA[i] == 0 && rB[i] == 1)
+	for(i = 0; i < g->numNodes; i++) {
+		if(rA[i] < rB[i])
 			return 1;
-		else if(rA[i] == 1 && rB[i] == 0)
+		else if(rA[i] > rB[i])
 			return 0;
 	}
 	return 0;
@@ -58,9 +61,10 @@ int comparaRotulos(grafo g,int *rA, int *rB) {
 // Implementa fila
 
 struct node *head;
-int tamF = 0;
+int tamF;
 
 void criaF() {
+	tamF = 0;
 	head = NULL;
 }
 
@@ -73,62 +77,62 @@ void insereF(grafo g,Agnode_t *elem) {
 		novo->ant = novo->prox = NULL;
 		head = novo;
 	} else {
-		struct node *p = head;
-		while( p->prox != NULL && comparaRotulos(g, ROTULOS(novo->elem), ROTULOS(p->elem)) )
-			p = p->prox;
-
-		if(p->prox == NULL) {
-			if( comparaRotulos(g, ROTULOS(novo->elem), ROTULOS(p->elem)) ) {
-				p->prox = novo;
-				novo->ant = p;
-				novo ->prox = NULL;
-			} else {
-				novo->ant = p->ant;
-				novo->prox = p;	
-				if(p != head)
-					p->ant->prox = novo;
-				p->ant = novo;
-			}
-		} else {
-			novo->ant = p->ant;
-			novo->prox = p;	
-			if(p != head)
-				p->ant->prox = novo;
-			p->ant = novo;
-		}
+		novo->ant = NULL;
+		novo->prox = head;
+		head->ant = novo;
+		head = novo;
 	}
 	tamF++;
 }
 
-// void impF(struct node *p) {
-// 	if(p != NULL) {
-// 		printf("%d ",ROTULO_MAX(p->elem));
-// 		impF(p->prox);
-// 	}
+void impF(struct node *p) {
+	if(p != NULL) {
+		int j = 0;
+		printf("vertice %s: ",agnameof(p->elem));
+		while( ROTULOS(p->elem)[j] ) {
+			printf("%d ", ROTULOS(p->elem)[j]);
+			j++;
+		}
+		printf("\n");
+ 		impF(p->prox);
+ 	}
 
-// }
+}
 
-// void imprimeF() {
-// 	impF(head);
-// }
+void imprimeF() {
+	impF(head);
+}
 
 int ehVazia() {
 	if(head == NULL) return 1;
 	return 0;
 }
 
-Agnode_t *removeF() {
+Agnode_t *removeF(grafo g) {
 	if(head == NULL) {
 		return NULL;
-	} else if(head->prox != NULL) {		// Lista com mais de um elemento
+	} else {		// Lista com mais de um elemento
 		struct node *p = head;
-		head = head->prox;
-		head->ant = NULL;
-		tamF--;
-		return p->elem;
-	} else {
-		struct node *ret = head;
-		head = NULL;
+		struct node *ret = p;
+		while(p != NULL) {
+			//printf("aaaaaaaaaaaaaa\n");
+			if( comparaRotulos(g, ROTULOS(ret->elem), ROTULOS(p->elem) ) ) {
+				//printf("%s %s\n", agnameof(ret->elem), agnameof(p->elem));
+				ret = p;
+			}
+			p = p->prox;
+		}
+		if(ret == head) {
+			if(head->prox != NULL)
+				head->prox->ant = NULL;
+			head = ret->prox;
+		} else {
+			if(ret->prox != NULL)
+				ret->prox->ant = ret->ant;
+			if(ret->ant != NULL)
+				ret->ant->prox = ret->prox;
+		}
+
 		tamF--;
 		return ret->elem;
 	}
@@ -185,6 +189,7 @@ grafo escreve_grafo(FILE *output, grafo g) {
 	agattr(g->grafo,AGNODE,"color","white");
 	char str[8];
 	for (n = agfstnode(g->grafo); n; n = agnxtnode(g->grafo,n)) {
+		printf("vertice %s = %d\n",agnameof(n),COR(n));
 		sprintf(str,"#%06x", (unsigned int)(16777215.0/(COR(n)+1)) );
 		agset(n,"color",str);
 	}
@@ -208,31 +213,55 @@ vertice *busca_lexicografica(grafo g, vertice r) {
 	Agnode_t *n;
 	int i;
 	for (n = agfstnode(g->grafo); n; n = agnxtnode(g->grafo,n)) {	
-		ROTULOS(n) = calloc((g->numNodes+1),sizeof(int)); // Inicia com zero	
+		ROTULOS(n) = calloc((g->numNodes+1),sizeof(int)); // Inicia com zero
+		TAM_ROTULOS(n) = 0;
+		COR(n) = -1;
 	}
 
 	struct vertice *ret = malloc(g->numNodes*sizeof(struct vertice));
-
-	for (n = agfstnode(g->grafo); n; n = agnxtnode(g->grafo,n)) {	
-		COR(n) = -1;
-	}
 	
 	Agnode_t *verticeInicial = agnode(g->grafo,"a",FALSE);//r->vertice;
-	insereRotulo(ROTULOS(verticeInicial),g->numNodes);
+	insereRotulo(verticeInicial,g->numNodes+1);
 
 	criaF();
 	for (n = agfstnode(g->grafo); n; n = agnxtnode(g->grafo,n)) {	
 		insereF(g, n);
 	}
 
+	int j;
 	i = 0;
 	while(ehVazia() == 0) {
-		n = removeF();
+		// printf("------------------\n");
+		// imprimeF();
+		// printf("+++++++++++++++++++\n");
+		n = removeF(g);
+		
+		//printf("%s\n", agnameof(n) );
+		// j = 0;
+		// while( ROTULOS(n)[j] ) {
+		// 	printf("%d ", ROTULOS(n)[j]);
+		// 	j++;
+		// }
+		// printf("\n");
+
 		ret[i].vertice = n;
-		for (e = agfstout(g->grafo,n); e; e = agnxtout(g->grafo,e)) {
-			insereRotulo(ROTULOS(aghead(e)), tamF);
+		for (e = agfstedge(g->grafo,n); e; e = agnxtedge(g->grafo,e,n)) {
+			if(aghead(e) != n)
+				insereRotulo(aghead(e), tamF+1);
+			else
+				insereRotulo(agtail(e), tamF+1);
 		}
 		i++;
+	}
+
+	for(i = 0; i < g->numNodes;i++) {
+		//printf("vertice %s: ", agnameof(ret[i].vertice) );
+		j = 0;
+		while( ROTULOS(ret[i].vertice)[j] ) {
+			//printf("%d ", ROTULOS(ret[i].vertice)[j]);
+			j++;
+		}
+		//printf("\n");
 	}
 
 	return (struct vertice **)ret;
@@ -256,16 +285,29 @@ unsigned int colore(grafo g, vertice *v) {
 			continue;
 		for(j=0;j<g->numNodes;j++)
 			disp[j] = 1;
-		for (e = agfstout(g->grafo,vPtr[i].vertice); e; e = agnxtout(g->grafo,e)) {
-			if( COR(aghead(e)) != -1 )	
-				disp[COR(aghead(e))] = 0;
+		//printf("vertice = %s\n",agnameof(vPtr[i].vertice));
+		for (e = agfstedge(g->grafo,vPtr[i].vertice); e; e = agnxtedge(g->grafo,e,vPtr[i].vertice)) {
+			if(aghead(e) != vPtr[i].vertice) {
+				//printf("vertice viz = %s\n", agnameof(aghead(e)) );
+				if( COR(aghead(e)) != -1 ) {
+					disp[COR(aghead(e))] = 0;
+					//printf("+++ cor = %d\n",COR(aghead(e)));
+				}
+			} else {
+				//printf("vertice viz = %s\n", agnameof(agtail(e)) );
+				if( COR(agtail(e)) != -1 ) {
+					disp[COR(agtail(e))] = 0;
+					//printf("+++ cor = %d\n",COR(agtail(e)));
+				}
+			}
 		}
 		for(j=0;j<g->numNodes;j++) {
 			if(disp[j] == 1)
 				break;
 		}
+		//printf("disp = %d %d %d\n",disp[0],disp[1],disp[2]);
 		COR(vPtr[i].vertice) = j;
-		printf("cor = %d\n",j);
+		//printf("cor = %d\n",j);
 	}
 
 	free(disp);
