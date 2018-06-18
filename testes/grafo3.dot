@@ -1,14 +1,14 @@
 graph graphname {
 
-	c -- a
-	c -- b
+	a -- b
+	b -- c
 	c -- d
-	c -- e
-	c -- f
-	c -- g
-	c -- h
-	c -- i
-	c -- j
-	c -- k
-	c -- l
+	d -- e
+	e -- f
+	f -- g
+	g -- h
+	h -- i
+	i -- j
+	j -- k
+	k -- l
 }
