@@ -25,6 +25,11 @@ typedef struct vertice *vertice;
 int destroi_grafo(grafo g);
 
 //------------------------------------------------------------------------------
+// devolve o número de vértices de g
+
+int n_vertices(grafo g);
+
+//------------------------------------------------------------------------------
 // lê um grafo no formato dot de input
 // 
 // devolve o grafo lido,
@@ -57,10 +62,11 @@ grafo escreve_grafo(FILE *output, grafo g);
 unsigned int cor(vertice v, grafo g);
 
 //------------------------------------------------------------------------------
-// aloca e devolve um vetor com os vértices de g ordenados de acordo com 
-// uma busca em largura lexicográfica a partir de r
+// preenche o vetor v (presumidamente um vetor com n_vertices(g)
+// posições) com os vértices de g ordenados de acordo com uma busca em
+// largura lexicográfica sobre g e devolve v
 
-vertice *busca_lexicografica(grafo g, vertice r);
+vertice *busca_lexicografica(grafo g, vertice *v);
 
 //------------------------------------------------------------------------------
 // colore os vértices de g de maneira "gulosa" segundo a ordem dos

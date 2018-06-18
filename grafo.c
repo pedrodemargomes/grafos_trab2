@@ -33,7 +33,6 @@ struct vertice {
 	Agnode_t *vertice;
 };
 
-
 #define ROTULOS(NODE) (((mynode_t *)(AGDATA(NODE)))->rotulos)
 #define COR(NODE) (((mynode_t *)(AGDATA(NODE)))->cor)
 #define TAM_ROTULOS(NODE) (((mynode_t *)(AGDATA(NODE)))->tamRotulos)
@@ -134,7 +133,9 @@ Agnode_t *removeF(grafo g) {
 		}
 
 		tamF--;
-		return ret->elem;
+		Agnode_t *retNode = ret->elem;
+		free(ret);
+		return retNode;
 	}
 	
 }
@@ -155,6 +156,12 @@ int destroi_grafo(grafo g) {
   	free(g);
 	return 1;
 }
+
+
+int n_vertices(grafo g) {
+	return g->numNodes;
+}
+
 //------------------------------------------------------------------------------
 // lê um grafo no formato dot de input
 // 
@@ -189,8 +196,8 @@ grafo escreve_grafo(FILE *output, grafo g) {
 	agattr(g->grafo,AGNODE,"color","white");
 	char str[8];
 	for (n = agfstnode(g->grafo); n; n = agnxtnode(g->grafo,n)) {
-		printf("vertice %s = %d\n",agnameof(n),COR(n));
-		sprintf(str,"#%06x", (unsigned int)(16777215.0/(COR(n)+1)) );
+		//printf("vertice %s = %d\n",agnameof(n),COR(n));
+		sprintf(str,"#%06x", (unsigned int)COR(n) );
 		agset(n,"color",str);
 	}
 
@@ -208,19 +215,18 @@ unsigned int cor(vertice v, grafo g) {
 // aloca e devolve um vetor com os vértices de g ordenados de acordo com 
 // uma busca em largura lexicográfica a partir de r
 
-vertice *busca_lexicografica(grafo g, vertice r) {
+vertice *busca_lexicografica(grafo g, vertice *v) {
+	struct vertice *ret = (struct vertice *)v;
+
 	Agedge_t *e;
 	Agnode_t *n;
 	int i;
 	for (n = agfstnode(g->grafo); n; n = agnxtnode(g->grafo,n)) {	
-		ROTULOS(n) = calloc((g->numNodes+1),sizeof(int)); // Inicia com zero
+		ROTULOS(n) = calloc((g->numNodes),sizeof(int)); // Inicia com zero
 		TAM_ROTULOS(n) = 0;
-		COR(n) = -1;
 	}
-
-	struct vertice *ret = malloc(g->numNodes*sizeof(struct vertice));
 	
-	Agnode_t *verticeInicial = agnode(g->grafo,"a",FALSE);//r->vertice;
+	Agnode_t *verticeInicial = agnode(g->grafo,"a",FALSE);
 	insereRotulo(verticeInicial,g->numNodes+1);
 
 	criaF();
@@ -254,15 +260,18 @@ vertice *busca_lexicografica(grafo g, vertice r) {
 		i++;
 	}
 
-	for(i = 0; i < g->numNodes;i++) {
-		//printf("vertice %s: ", agnameof(ret[i].vertice) );
+	/*for(i = 0; i < g->numNodes;i++) {
+		printf("vertice %s: ", agnameof(ret[i].vertice) );
 		j = 0;
 		while( ROTULOS(ret[i].vertice)[j] ) {
-			//printf("%d ", ROTULOS(ret[i].vertice)[j]);
+			printf("%d ", ROTULOS(ret[i].vertice)[j]);
 			j++;
 		}
-		//printf("\n");
-	}
+		printf("\n");
+	}*/
+
+	for (n = agfstnode(g->grafo); n; n = agnxtnode(g->grafo,n))	
+		free(ROTULOS(n));
 
 	return (struct vertice **)ret;
 }
@@ -276,32 +285,37 @@ vertice *busca_lexicografica(grafo g, vertice r) {
 //     2. cor(u,g) != cor(v,g), para toda aresta {u,v} de g
 
 unsigned int colore(grafo g, vertice *v) {
+	Agnode_t *n;	
+	for (n = agfstnode(g->grafo); n; n = agnxtnode(g->grafo,n)) {	
+		COR(n) = 0;
+	}
+
 	struct vertice *vPtr = (struct vertice *)v;
 	Agedge_t *e;
 	int i,j;
-	int *disp = malloc(g->numNodes*sizeof(int));
+	int *disp = malloc( (g->numNodes+1)*sizeof(int));
 	for(i = g->numNodes-1; i >=0;i--) {
-		if( COR(vPtr[i].vertice) != -1 ) // Se o vertice tiver alguma cor
+		if( COR(vPtr[i].vertice) != 0 ) // Se o vertice tiver alguma cor
 			continue;
-		for(j=0;j<g->numNodes;j++)
+		for(j=0;j<g->numNodes+1;j++)
 			disp[j] = 1;
 		//printf("vertice = %s\n",agnameof(vPtr[i].vertice));
 		for (e = agfstedge(g->grafo,vPtr[i].vertice); e; e = agnxtedge(g->grafo,e,vPtr[i].vertice)) {
 			if(aghead(e) != vPtr[i].vertice) {
 				//printf("vertice viz = %s\n", agnameof(aghead(e)) );
-				if( COR(aghead(e)) != -1 ) {
+				if( COR(aghead(e)) != 0 ) {
 					disp[COR(aghead(e))] = 0;
 					//printf("+++ cor = %d\n",COR(aghead(e)));
 				}
 			} else {
 				//printf("vertice viz = %s\n", agnameof(agtail(e)) );
-				if( COR(agtail(e)) != -1 ) {
+				if( COR(agtail(e)) != 0 ) {
 					disp[COR(agtail(e))] = 0;
 					//printf("+++ cor = %d\n",COR(agtail(e)));
 				}
 			}
 		}
-		for(j=0;j<g->numNodes;j++) {
+		for(j=1;j<g->numNodes+1;j++) {
 			if(disp[j] == 1)
 				break;
 		}
@@ -310,8 +324,14 @@ unsigned int colore(grafo g, vertice *v) {
 		//printf("cor = %d\n",j);
 	}
 
+	int count = 1;
+	for (n = agfstnode(g->grafo); n; n = agnxtnode(g->grafo,n)) {	
+		if(COR(n) > count)
+			count++;
+	}
+
 	free(disp);
-	return 0;
+	return count;
 }
 
 //------------------------------------------------------------------------------

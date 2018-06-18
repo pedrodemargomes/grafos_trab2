@@ -1,17 +1,16 @@
 graph graphname {
 	node [color=white,
-		 style=filled
+		style=filled
 	];
-	a	 [color="#7fffff"];
-	b	 [color="#ffffff"];
+	a	 [color="#ffffffff"];
+	b	 [color="#ffffffff"];
 	a -- b;
-	c	 [color="#555555"];
+	c	 [color="#ffffffff"];
 	a -- c;
 	b -- c;
-	d	 [color="#ffffff"];
+	d	 [color="#ffffffff"];
 	c -- d;
-	e	 [color="#7fffff"];
+	e	 [color="#ffffffff"];
 	c -- e;
 	d -- e;
 }
-

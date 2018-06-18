@@ -9,9 +9,13 @@ int main(void) {
  	if ( !g )
  		return 1;
 	
-	vertice *t =  busca_lexicografica(g, 0);
-	colore( g ,  t);
+	vertice *r = malloc(n_vertices(g)*sizeof(vertice));
+	busca_lexicografica(g, r);
+	printf("cores: %u\n", colore(g, r));
+	free(r);
 
 	escreve_grafo(stdout, g);
-	return !destroi_grafo(g);
+	destroi_grafo(g);
+
+	return 0;
 }

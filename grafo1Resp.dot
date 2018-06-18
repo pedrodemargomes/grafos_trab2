@@ -1,6 +1,6 @@
 graph graphname {
 	node [color=white,
-		 style=filled
+		style=filled
 	];
 	a	 [color="#7fffff"];
 	b	 [color="#555555"];
@@ -19,4 +19,3 @@ graph graphname {
 	d -- e;
 	c -- d;
 }
-
