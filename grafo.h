@@ -30,6 +30,11 @@ int destroi_grafo(grafo g);
 int n_vertices(grafo g);
 
 //------------------------------------------------------------------------------
+// devolve o vértice de nome 'nome' em g
+
+vertice vertice_de_nome(char *nome, grafo g);
+
+//------------------------------------------------------------------------------
 // lê um grafo no formato dot de input
 // 
 // devolve o grafo lido,
@@ -64,9 +69,9 @@ unsigned int cor(vertice v, grafo g);
 //------------------------------------------------------------------------------
 // preenche o vetor v (presumidamente um vetor com n_vertices(g)
 // posições) com os vértices de g ordenados de acordo com uma busca em
-// largura lexicográfica sobre g e devolve v
+// largura lexicográfica sobre g a partir de r e devolve v
 
-vertice *busca_lexicografica(grafo g, vertice *v);
+vertice *busca_lexicografica(vertice r, grafo g, vertice *v);
 
 //------------------------------------------------------------------------------
 // colore os vértices de g de maneira "gulosa" segundo a ordem dos

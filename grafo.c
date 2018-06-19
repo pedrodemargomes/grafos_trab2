@@ -128,8 +128,7 @@ Agnode_t *removeF(grafo g) {
 		} else {
 			if(ret->prox != NULL)
 				ret->prox->ant = ret->ant;
-			if(ret->ant != NULL)
-				ret->ant->prox = ret->prox;
+			ret->ant->prox = ret->prox;
 		}
 
 		tamF--;
@@ -211,11 +210,18 @@ unsigned int cor(vertice v, grafo g) {
 	return COR(v->vertice);
 }
 
+vertice vertice_de_nome(char *nome, grafo g) {
+	Agnode_t *v = agnode(g->grafo,nome,FALSE);
+	struct vertice *ret = malloc( sizeof(struct vertice) );
+	ret->vertice = v;
+	return ret;
+}
+
 //------------------------------------------------------------------------------
 // aloca e devolve um vetor com os vértices de g ordenados de acordo com 
 // uma busca em largura lexicográfica a partir de r
 
-vertice *busca_lexicografica(grafo g, vertice *v) {
+vertice *busca_lexicografica(vertice r, grafo g, vertice *v) {
 	struct vertice *ret = (struct vertice *)v;
 
 	Agedge_t *e;
@@ -226,7 +232,7 @@ vertice *busca_lexicografica(grafo g, vertice *v) {
 		TAM_ROTULOS(n) = 0;
 	}
 	
-	Agnode_t *verticeInicial = agfstnode(g->grafo);
+	Agnode_t *verticeInicial = r->vertice;
 	insereRotulo(verticeInicial,g->numNodes+1);
 
 	criaF();
@@ -260,15 +266,15 @@ vertice *busca_lexicografica(grafo g, vertice *v) {
 		i++;
 	}
 
-	/*for(i = 0; i < g->numNodes;i++) {
-		printf("vertice %s: ", agnameof(ret[i].vertice) );
+	for(i = 0; i < g->numNodes;i++) {
+		printf("\nvertice %s: ", agnameof(ret[i].vertice) );
 		j = 0;
 		while( ROTULOS(ret[i].vertice)[j] ) {
 			printf("%d ", ROTULOS(ret[i].vertice)[j]);
 			j++;
 		}
 		printf("\n");
-	}*/
+	}
 
 	for (n = agfstnode(g->grafo); n; n = agnxtnode(g->grafo,n))	
 		free(ROTULOS(n));
@@ -327,7 +333,7 @@ unsigned int colore(grafo g, vertice *v) {
 	int count = 1;
 	for (n = agfstnode(g->grafo); n; n = agnxtnode(g->grafo,n)) {	
 		if(COR(n) > count)
-			count++;
+			count = COR(n);
 	}
 
 	free(disp);

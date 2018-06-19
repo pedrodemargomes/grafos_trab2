@@ -10,7 +10,7 @@ int main(void) {
  		return 1;
 	
 	vertice *r = malloc(n_vertices(g)*sizeof(vertice));
-	busca_lexicografica(g, r);
+	busca_lexicografica( vertice_de_nome("a",g), g, r);
 	printf("cores: %u\n", colore(g, r));
 	free(r);
 
