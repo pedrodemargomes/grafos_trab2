@@ -1,14 +1,10 @@
-graph graphname {
-
-	a -- b
-	b -- c
-	c -- d
-	d -- e
-	e -- f
-	f -- g
-	g -- h
-	h -- i
-	i -- j
-	j -- k
-	k -- l
+graph "Petersen" {
+	/* Outer wheel. The len= is what makes it outer */
+	"a" -- "1" -- "2" -- "3" -- "4" -- "a"
+		"a" -- "5"
+		"1" -- "6"
+		"2" -- "7"
+		"3" -- "8"
+		"4" -- "9"
+		"5" -- "7" -- "9" -- "6" -- "8" -- "5";
 }

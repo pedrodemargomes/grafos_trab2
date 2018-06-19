@@ -226,7 +226,7 @@ vertice *busca_lexicografica(grafo g, vertice *v) {
 		TAM_ROTULOS(n) = 0;
 	}
 	
-	Agnode_t *verticeInicial = agnode(g->grafo,"a",FALSE);
+	Agnode_t *verticeInicial = agfstnode(g->grafo);
 	insereRotulo(verticeInicial,g->numNodes+1);
 
 	criaF();

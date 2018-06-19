@@ -1,0 +1,31 @@
+graph Petersen {
+	node [color=white,
+		 style=filled
+	];
+	a	 [color="red"];
+	1	 [color="blue"];
+	a -- 1;
+	5	 [color="#000001"];
+	a -- 5;
+	2	 [color="#000001"];
+	1 -- 2;
+	6	 [color="#000001"];
+	1 -- 6;
+	3	 [color="blue"];
+	2 -- 3;
+	7	 [color="red"];
+	2 -- 7;
+	4	 [color="#000001"];
+	3 -- 4;
+	8	 [color="red"];
+	3 -- 8;
+	4 -- a;
+	9	 [color="blue"];
+	4 -- 9;
+	5 -- 7;
+	6 -- 8;
+	7 -- 9;
+	8 -- 5;
+	9 -- 6;
+}
+
